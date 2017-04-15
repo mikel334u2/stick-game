@@ -1,29 +1,42 @@
 public class Human{
   
-  private boolean swingDir, jumped, walkRight;
-  private color col;
-  private float x, y, size, feetY, vy, angle, time;
+  private boolean swingDir, pright, jump, ground;
+  private float ny, ex, sy, wx;
+  private color c;
+  private float x, y, size, feetY, gLevel;
+  private float vy, angle, time, heightDiff;
+  private int health;
+  //private Shield shield;
   
   public Human(float x, float y, float s, color c){
-    col = c;
+    this.c = c;
     this.x = x;
     this.y = y;
     size = s;
-    swingDir = true;
-    walkRight = false;
     angle = PI/6.0;
-    feetY = y + size*5 + size*3*cos(angle);
+    
+    jump = false;
+    gLevel = height;
+    ground = (feetY >= gLevel);
+    
+    health = 4;
+    swingDir = true;
+    pright = false;
     vy = time = 0;
+    update();
   }
   
   public void display(){
     
-    strokeWeight(3);
-    stroke(col);
+    update();
+    
+    strokeWeight(8);
+    stroke(c);
     fill(255);
     pushMatrix();
     
     translate(x,y);
+    noFill();
     ellipse(0,0,size*2,size*2);
     line(0,size,0,size*5);
     
@@ -46,57 +59,106 @@ public class Human{
     popMatrix();
   }
   
-  public void setXY(float x, float y){
+  // 0 = x, 1 = y, 2 = feetY, 3 = heightDiff, 4 = size, 5 = gLevel
+  public float getf(int var){
+    if (var == 0) return x;
+    else if (var == 1) return y;
+    else if (var == 2) return feetY;
+    else if (var == 3) return heightDiff;
+    else if (var == 4) return size;
+    else if (var == 5) return gLevel;
+    return 0;
+  }
+  
+  // 0 = health
+  public int getint(int var){
+    if (var == 0) return health;
+    return 0;
+  }
+  
+  public void setX(float x){
     this.x = x;
-    this.y = y;
   }
   
-  public float getFeetY(){
-    return feetY;   
+  public void setHealth(int h){
+    health = h;
   }
   
-  public void walk(){
-    if (keyCode == RIGHT){
-      x += 5;
-      if (!walkRight) swingDir = !swingDir;
-      walkRight = true;
+  public void walk(boolean right){
+    
+    if (right != pright){
+      swingDir = !swingDir;
+      pright = right;
     }
-    else if (keyCode == LEFT){
-      x -= 5;
-      if (walkRight) swingDir = !swingDir;
-      walkRight = false;
-    }
-    if (angle >= PI/6.0){
-      swingDir = true;
-    }
-    else if (angle <= -PI/6.0){
-      swingDir = false;
-    }
-    if (swingDir){
-      angle-=.08;
-    }
-    else angle+=.08;
+    
+    if (right) x += 6;
+    else x -= 6;
+    
+    if (angle >= PI/6.0) swingDir = true;
+    else if (angle <= -PI/6.0) swingDir = false;
+    
+    if (swingDir) angle -= .05;
+    else angle += .05;
   }
   
   public void jump(){
-    vy = -15;
-    jumped = true;
+    if (!jump){
+      vy = -15;
+      jump = true;
+    }
   }
   
   public void fall(){
     
-    if (feetY < height || jumped){
-      y += vy;
-      time += 0.01;
-      vy += 3*time;
-      feetY = y + size*5 + size*3*cos(angle);
+    y += vy;
+    time += 0.01;
+    vy += 3*time;
+    if (ground && vy >= 0){
+      y = gLevel - heightDiff;
+      feetY = gLevel;
+      vy = time = 0;
+      jump = false;
     }
-    if (feetY >= height){
-      y = height - (size*5 + size*3*cos(angle));
-      feetY = height;
-      time = 0;
-      vy = 0;
-      jumped = false;
+    update();
+  }
+  
+  public Shield shield(){
+    if (ground){
+      return new Shield(#00F6FC, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
     }
+    return null;
+    //shield.setXY(x, y - size + heightDiff*.5);
+    //shield.display();
+    //if (shield.isTouching(bulletX, bulletX, bulletY, bulletY)){
+    //  return true;
+    //}
+    //return false;
+  }
+  
+  //public Bullet fireBullet(float x, float y, float sx, float sy){
+  //  return new Bullet(x,y,sx,sy);
+  //}
+  
+  public boolean isTouching(float WX, float EX, float NY, float SY){
+    
+    boolean touch1 = (ex <= EX && ex >= WX || wx <= EX && wx >= WX) &&
+      (ny >= NY && ny <= SY || sy >= NY && sy <= SY);
+    boolean touch2 = (EX <= ex && EX >= wx || WX <= ex && WX >= wx) &&
+      (NY >= ny && NY <= sy || SY >= ny && SY <= sy);
+    return touch1 || touch2;
+  }
+  
+  public void setGL(float gl){
+    gLevel = gl;
+  }
+  
+  private void update(){
+    heightDiff = size*5 + size*3*cos(angle);
+    feetY = y + heightDiff;
+    ny = y - size;
+    sy = y + heightDiff;
+    ex = x + size;
+    wx = x - size;
+    ground = (feetY >= gLevel);
   }
 }
