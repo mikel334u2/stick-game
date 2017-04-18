@@ -7,6 +7,7 @@
 // declare variables
 Human player, npc1, e1, e2;
 Shield shield;
+Bullet[] bt1, bt2;
 Button b1, b2;
 PFont comicSansMS;
 PImage dungeon, sky;
@@ -39,6 +40,10 @@ void setup(){
   player = new Human(200,400,20,200);
   npc1 = new Human(600,400,20,100);
   npc1.setY(height - npc1.getf(3));
+  
+  // initialize bullet arrays
+  bt1 = new Bullet[0];
+  bt2 = new Bullet[0];
   
   // keeps track of which screen to display
   screen = -1;
@@ -552,6 +557,9 @@ public void screen4(){
       text("DIEEE!", e1.getf(0), e1.getf(1) - 4*e1.getf(4));
     }
     
+    // deactivates shield if down is not currently being pressed
+    shield = null;
+    
     // if player touches enemy, subtract health by one
     // e1touch makes sure player won't lose health until touched again
     if (player.isTouching(e1) && e1touch){
@@ -574,9 +582,8 @@ public void screen4(){
     screen++;
     
     // sets position of enemy on next screen
-    //e2 = new Human(700,height,20,#000000);
-    
-    //frameReset = frameCount%120;
+    e2 = new Human(700,height,20,#000000);
+    frameReset = frameCount%120;
   }
   else if (player.getf(0) < 0){
     player.setX(width);
@@ -584,13 +591,71 @@ public void screen4(){
   }
 }
 
-// in progress...----------------------
 public void screen5(){
   
+  // makes the background the sky
   background(sky);
   displayUI(0);
   
-  // handle normal/hard difficulty
+  // if player is touching enemy 2, he dies (set equal to null), increment score
+  if (e2 != null && player.isTouching(e2)){
+    e2 = null;
+    score++;
+  }
+  
+  // if the enemy exists...
+  else if (e2 != null){
+    
+    // display/fall enemy
+    e2.display();
+    e2.fall();
+    
+    // normal mode has slower bullets and slower launch rate
+    if (normal && (frameCount - frameReset) % 120 == 0){
+      
+      // put bullet at first index of bt1 array
+      bt1 = (Bullet[])append(bt1, e2.bullet(-10,0));
+    }
+    
+    // hard mode has faster bullets and faster launch rate
+    if (hard && (frameCount - frameReset) % 60 == 0){
+      bt1 = (Bullet[])append(bt1, e2.bullet(-20,0));      
+    }
+    
+    // write menacing text
+    fill(0);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/30);
+    text("HAIL THE", e2.getf(0), e2.getf(1) - 6*e2.getf(4));
+    text("STICK GOD!", e2.getf(0), e2.getf(1) - 4*e2.getf(4));
+  }
+  
+  for (Bullet bullet : bt1){
+    
+    // if the bullet is touching the shield, simply delete it
+    if (!(bullet == null || shield == null) && bullet.isTouching(shield)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // if it touches the player, subtract health from player and delete bullet
+    else if (bullet != null && bullet.isTouching(player)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+      player.setHealth(player.getint(0)-1);
+    }
+    
+    // if bullet is past left bound, delete it (saves memory)
+    else if (bullet != null && bullet.getX() < 0){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // otherwise, move and display the bullet
+    else if (bullet != null){
+      bullet.display();
+      bullet.move();
+    }
+  }
+  
+  shield = null;
   
   rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
   
@@ -603,7 +668,7 @@ public void screen5(){
     player.setX(width);
     screen--;
     
-    // sets position of enemy on next screen
+    // sets position of enemy on previous screen
     e1 = new Human(-100,height,20,#FF0000);
     e1walk = false;
     e1dir = true;

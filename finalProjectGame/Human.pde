@@ -203,18 +203,11 @@ public class Human{
   // creates a shield object that will surround player
   public Shield shield(){
     return new Shield(#00FFFF, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
-    
-    //shield.setXY(x, y - size + heightDiff*.5);
-    //shield.display();
-    //if (shield.isTouching(bulletX, bulletX, bulletY, bulletY)){
-    //  return true;
-    //}
-    //return false;
   }
   
-  //public Bullet fireBullet(float x, float y, float sx, float sy){
-  //  return new Bullet(x,y,sx,sy);
-  //}
+  public Bullet bullet(float sx, float sy){
+    return new Bullet(x,y,sx,sy);
+  }
   
   // determines if a human is touching another human
   public boolean isTouching(Human h){
