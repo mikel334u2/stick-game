@@ -28,11 +28,20 @@ class Shield{
     popMatrix();
   }
   
-  public boolean isTouching(float WX, float EX, float NY, float SY){
+  public boolean isTouching(Human h){
     
-    boolean touch = (EX <= ex && EX >= wx || WX <= ex && WX >= wx) &&
+    float NY = h.getf(6);
+    float EX = h.getf(7);
+    float SY = h.getf(8);
+    float WX = h.getf(9);
+    
+    // essentially determines if a corner of one human's "box" is within the box
+    // of the other human
+    boolean touch1 = (ex <= EX && ex >= WX || wx <= EX && wx >= WX) &&
+      (ny >= NY && ny <= SY || sy >= NY && sy <= SY);
+    boolean touch2 = (EX <= ex && EX >= wx || WX <= ex && WX >= wx) &&
       (NY >= ny && NY <= sy || SY >= ny && SY <= sy);
-    return touch;
+    return touch1 || touch2;
   }
   
   public void setXY(float x, float y){

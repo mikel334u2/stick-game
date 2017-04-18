@@ -202,7 +202,7 @@ public class Human{
   
   // creates a shield object that will surround player
   public Shield shield(){
-    return new Shield(#00F6FC, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
+    return new Shield(#00FFFF, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
     
     //shield.setXY(x, y - size + heightDiff*.5);
     //shield.display();

@@ -5,7 +5,7 @@
  */
 
 // declare variables
-Human player, npc1;
+Human player, npc1, e1, e2;
 Shield shield;
 Button b1, b2;
 PFont comicSansMS;
@@ -14,6 +14,9 @@ PImage dungeon, sky;
 // changing game mechanics
 int screen, score, timer, timeFrame, frameReset, timeReset, deathFrame;
 boolean pause, normal, hard, leftWall, rightWall, dead, cutscene;
+
+// character variables
+boolean e1walk, e1dir, e1touch; // enemy 1
 
 // set size
 void settings(){
@@ -173,6 +176,7 @@ public void turboKeyPressed(){
         shield = player.shield();
         shield.display();
       }
+      else shield = null;
     }
   }
 }
@@ -494,6 +498,12 @@ public void screen3(){
   if (player.getf(0) > width){
     player.setX(0);
     screen++;
+    
+    // sets position of enemy on next screen
+    e1 = new Human(-100,height,20,#FF0000);
+    e1walk = false;
+    e1dir = true;
+    e1touch = true;
   }
   else if (player.getf(0) < 0){
     player.setX(width);
@@ -506,48 +516,97 @@ public void screen3(){
   }
 }
 
-// in progress...----------------------
 public void screen4(){
   
+  // half dungeon, half sky background
   image(dungeon, -width/2,0);
   image(sky,width/2,0);
   displayUI(255);
   
-  // handle normal/hard difficulty
+  player.setGL(height);
+  
+  // if shield is touching enemy 1 and both exist, delete enemy, increase score
+  if (!(shield == null || e1 == null) && shield.isTouching(e1)){
+    e1 = null;
+    score++;
+  }
+  
+  // if enemy exists...
+  else if (e1 != null){
+    
+    // and if player is/was on right half of screen
+    if (e1walk){
+      
+      // display, fall, and walk enemy
+      e1.display();
+      e1.fall();
+      
+      // changes direction when it hits an edge
+      if (e1dir) e1.walk(true);
+      else e1.walk(false);
+      
+      // write menacing text
+      fill(#FF0000);
+      textAlign(CENTER,CENTER);
+      textFont(comicSansMS,width/24);
+      text("DIEEE!", e1.getf(0), e1.getf(1) - 4*e1.getf(4));
+    }
+    
+    // if player touches enemy, subtract health by one
+    // e1touch makes sure player won't lose health until touched again
+    if (player.isTouching(e1) && e1touch){
+      player.setHealth(player.getint(0)-1);
+      e1touch = false;
+    }
+    else if (!player.isTouching(e1)) e1touch = true;
+    
+    // changes direction of e1 if it hits an edge
+    if (e1.getf(0) > width) e1dir = false;
+    else if (e1.getf(0) < 0) e1dir = true;
+    if (player.getf(0) >= width/2) e1walk = true;
+  }
+  
+  player.display();
+  player.fall();
   
   if (player.getf(0) > width){
     player.setX(0);
     screen++;
+    
+    // sets position of enemy on next screen
+    //e2 = new Human(700,height,20,#000000);
+    
+    //frameReset = frameCount%120;
   }
   else if (player.getf(0) < 0){
     player.setX(width);
     screen--;
   }
-  player.setGL(height);
-  
-  player.display();
-  player.fall();
 }
 
+// in progress...----------------------
 public void screen5(){
   
-  background(#FFFF00);
+  background(sky);
   displayUI(0);
   
   // handle normal/hard difficulty
   
   rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
+  
+  player.setGL(height);
+  
+  player.display();
+  player.fall();
+  
   if (player.getf(0) < 0){
     player.setX(width);
     screen--;
+    
+    // sets position of enemy on next screen
+    e1 = new Human(-100,height,20,#FF0000);
+    e1walk = false;
+    e1dir = true;
+    e1touch = true;
   }
-  player.setGL(height);
-  //if (player.getter(0) + player.getter(4) <= width/2 && player.getter(0) - player.getter(4) >= 0){
-  //  player.setGL(height);
-  //}
-  //else if (player.getter(0) + player.getter(4) <= width && player.getter(0) + player.getter(4) > width/2){
-  //  player.setGL(height-50);
-  //}
-  player.display();
-  player.fall();
 }
