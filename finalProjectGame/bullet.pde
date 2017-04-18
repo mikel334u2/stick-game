@@ -1,3 +1,4 @@
+// in progress...-----------------
 class Bullet{
   
   private float x,y,sx,sy;

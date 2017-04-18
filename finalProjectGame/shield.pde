@@ -1,3 +1,4 @@
+//in progress...-----------------------------------------
 class Shield{
   
   private color c;
