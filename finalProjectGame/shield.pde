@@ -1,10 +1,11 @@
-//in progress...-----------------------------------------
+// Shield class for defending player against attacks
 class Shield{
   
   private color c;
   private float x, y, w, h;
   private float ny, ex, sy, wx;
   
+  // Shield constructor
   public Shield(color c, float x, float y, float w, float h){
     this.c = c;
     this.x = x;
@@ -14,6 +15,15 @@ class Shield{
     update();
   }
   
+  // updates the boundaries
+  private void update(){
+    wx = x - w/2;
+    ex = x + w/2;
+    ny = y - h/2;
+    sy = y + h/2;
+  }
+  
+  // display the shield
   public void display(){
     
     update();
@@ -28,6 +38,7 @@ class Shield{
     popMatrix();
   }
   
+  // determines if shield is touching another human
   public boolean isTouching(Human h){
     
     float NY = h.getf(6);
@@ -44,15 +55,12 @@ class Shield{
     return touch1 || touch2;
   }
   
-  public void setXY(float x, float y){
-    this.x = x;
-    this.y = y;
-  }
-  
-  private void update(){
-    wx = x - w/2;
-    ex = x + w/2;
-    ny = y - h/2;
-    sy = y + h/2;
+  // get boundaries of the shield
+  public float getCorners(int var){
+    if (var == 0) return ny;
+    if (var == 1) return ex;
+    if (var == 2) return sy;
+    if (var == 3) return wx;
+    return 0;
   }
 }
