@@ -6,7 +6,6 @@ public class Human{
   private float x, y, size, feetY, gLevel;
   private float vy, angle, time, heightDiff;
   private int health;
-  //private Shield shield;
   
   public Human(float x, float y, float s, color c){
     this.c = c;
@@ -59,7 +58,7 @@ public class Human{
     popMatrix();
   }
   
-  // 0 = x, 1 = y, 2 = feetY, 3 = heightDiff, 4 = size, 5 = gLevel
+  // getters
   public float getf(int var){
     if (var == 0) return x;
     else if (var == 1) return y;
@@ -67,22 +66,27 @@ public class Human{
     else if (var == 3) return heightDiff;
     else if (var == 4) return size;
     else if (var == 5) return gLevel;
+    else if (var == 6) return ny;
+    else if (var == 7) return ex;
+    else if (var == 8) return sy;
+    else if (var == 9) return wx;
     return 0;
   }
-  
-  // 0 = health
   public int getint(int var){
     if (var == 0) return health;
     return 0;
   }
-  
-  public void setX(float x){
-    this.x = x;
+  public boolean getbool(int var){
+    if (var == 0) return ground;
+    return false;
   }
   
-  public void setHealth(int h){
-    health = h;
-  }
+  // setters
+  public void setX(float x){ this.x = x; }
+  public void setY(float y){ this.y = y; }
+  public void setHealth(int h){ health = h; }
+  public void setColor(color c){ this.c = c; }
+  public void setGL(float gl){ gLevel = gl; }
   
   public void walk(boolean right){
     
@@ -123,10 +127,8 @@ public class Human{
   }
   
   public Shield shield(){
-    if (ground){
-      return new Shield(#00F6FC, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
-    }
-    return null;
+    return new Shield(#00F6FC, x, y - size + heightDiff*.5, size*4, heightDiff + size*2);
+    
     //shield.setXY(x, y - size + heightDiff*.5);
     //shield.display();
     //if (shield.isTouching(bulletX, bulletX, bulletY, bulletY)){
@@ -139,17 +141,17 @@ public class Human{
   //  return new Bullet(x,y,sx,sy);
   //}
   
-  public boolean isTouching(float WX, float EX, float NY, float SY){
+  public boolean isTouching(Human h){
     
+    float NY = h.getf(6);
+    float EX = h.getf(7);
+    float SY = h.getf(8);
+    float WX = h.getf(9);
     boolean touch1 = (ex <= EX && ex >= WX || wx <= EX && wx >= WX) &&
       (ny >= NY && ny <= SY || sy >= NY && sy <= SY);
     boolean touch2 = (EX <= ex && EX >= wx || WX <= ex && WX >= wx) &&
       (NY >= ny && NY <= sy || SY >= ny && SY <= sy);
     return touch1 || touch2;
-  }
-  
-  public void setGL(float gl){
-    gLevel = gl;
   }
   
   private void update(){

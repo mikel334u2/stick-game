@@ -10,12 +10,12 @@ class Shield{
     this.y = y;
     this.w = w;
     this.h = h;
-    updateVar();
+    update();
   }
   
   public void display(){
     
-    updateVar();
+    update();
     
     stroke(c);
     strokeWeight(5);
@@ -39,7 +39,7 @@ class Shield{
     this.y = y;
   }
   
-  private void updateVar(){
+  private void update(){
     wx = x - w/2;
     ex = x + w/2;
     ny = y - h/2;
