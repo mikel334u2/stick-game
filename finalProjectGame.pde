@@ -3,19 +3,19 @@
  * This is our final project for CAP3032. It is a game. Enjoy!
  *
  */
+//import libraries
+import ddf.minim.*;
 
 // declare variables
-import processing.sound.*;
-import ddf.minim.*;
 int idx, cx, cy, vx, vy, h;
 Minim minim;
 AudioPlayer [] music;
-Human player, npc1,npc2, e1, e2;
+Human player, npc1,npc2, npc3, e1, e2;
 Shield shield;
 Bullet[] bt1, bt2;
 Button b1, b2;
 PFont comicSansMS;
-PImage dungeon, sky, desert, cloudy, winter, lava, lava1, summer;
+PImage dungeon, sky, desert, cave, lava, summer, lair;
 
 // changing game mechanics
 int screen, score, timer, timeFrame, frameReset, timeReset, deathFrame;
@@ -33,34 +33,39 @@ void setup(){
  // head tumbleweed variables
   vx = -4;
   vy = 0;
-  cx = 780;
+  cx = 700;
   cy = 780;
   h = 0;
   //load audio
   idx = 0;
-  music = new AudioPlayer[2];
+  music = new AudioPlayer[9];
   minim = new Minim(this);
-  music[1] = minim.loadFile("Boss.mp3");
   music[0] = minim.loadFile("Big Blue.mp3");
- music[idx].play();
+  music[1] = minim.loadFile("dungeon.mp3");
+  music[2] = minim.loadFile("Alarm.mp3");
+  music[3] = minim.loadFile("Chirp.mp3");
+  music[4] = minim.loadFile("Waves.mp3");
+  music[5] = minim.loadFile("Desert.mp3");
+  music[6] = minim.loadFile("Cave.mp3");
+  music[7] = minim.loadFile("lava.mp3");
+ // music[8] = minim.loadFile()
+  music[8] = minim.loadFile("Boss.mp3");
     
   // load images from file, resize to fit
-  sky = loadImage("sky.png");
+   sky = loadImage("sky.png");
   sky.resize(width, height);
   dungeon = loadImage("dungeonWall.jpg");
   dungeon.resize(width, height);
+  cave = loadImage("cave.png");
   desert = loadImage("desert.png");
   desert.resize(width,height);
-  cloudy = loadImage("cloudy.jpg");
-  cloudy.resize(width,height);
-  winter = loadImage("winter.jpg");
-  winter.resize(width,height);
-  lava1 = loadImage("enroute lava.jpg");
-  lava1.resize(width,height);
-  lava = loadImage("lava.jpg");
-  lava.resize(width,height);
   summer = loadImage("summer.jpg");
   summer.resize(width,height);
+  lava = loadImage("lava.jpg");
+  lava.resize(width,height);
+  lair = loadImage("lair.jpg");
+  lair.resize(width,height);
+  
   // load font
   comicSansMS = loadFont("ComicSansMS-48.vlw");
   textAlign(CENTER, CENTER);
@@ -71,6 +76,8 @@ void setup(){
   npc1.setY(height - npc1.getf(3));
   npc2 = new Human(200,400,20,#03ECFF);
   npc2.setY(height - npc2.getf(3));
+  npc3 = new Human(500,400,20, #A57721);
+  npc3.setY(height - npc3.getf(3));
   
   // initialize bullet arrays
   bt1 = new Bullet[0];
@@ -122,18 +129,51 @@ void draw(){
   else if (dead) gameOver();
   else if (screen == -1) startMenu();
   else if (screen == 0) difficulty();
-  else if (screen == 1) screen1();
-  else if (screen == 2) screen2();
-  else if (screen == 3) screen3();
-  else if (screen == 4) screen4();
-  else if (screen == 5) screen5();
-  else if (screen == 6) screen6();
-  else if (screen == 7) screen7();
-  else if (screen == 8) screen8();
-  else if (screen == 9) screen9();
-  else if(screen == 10) {
-    music[0].pause();
+  else if (screen == 1){
     music[1].play();
+    screen1();
+  }
+  else if (screen == 2) {
+    music[1].pause();
+    music[2].play();
+    screen2();
+  }
+  else if (screen == 3) {
+    music[2].pause();
+    music[1].play();
+    screen3();
+  }
+  else if (screen == 4) {
+    music[1].pause();
+    music[3].play();
+    screen4();
+  }
+  else if (screen == 5) {
+    music[3].pause();
+    music[4].play();
+    screen5();
+  }
+  else if (screen == 6) {
+    music[4].pause();
+    music[5].play();
+    screen6();
+  }
+  else if (screen == 7) {
+    music[5].pause();
+    music[6].play();
+    screen7();
+  }
+  else if (screen == 8) {
+    music[6].pause();
+    music[7].play();
+     screen8();
+  }
+  else if (screen == 9) {
+    music[7].pause();
+    screen9();
+  }
+  else if(screen == 10) {
+    music[8].play();
     screen10();
   }
   // allows player continuous input upon pressing a button
@@ -623,16 +663,19 @@ public void screen4(){
     // sets position of enemy on next screen
     e2 = new Human(700,height,20,#000000);
     frameReset = frameCount%120;
+    while (bt1.length > 0 && bt1[0] != null)
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
   }
   else if (player.getf(0) < 0){
     player.setX(width);
     screen--;
   }
 }
+
 public void screen5(){
   
-  // makes the background summer
-   background(summer);
+  // makes the background the sky
+  background(summer);
   displayUI(0);
   
   // if player is touching enemy 2, he dies (set equal to null), increment score
@@ -695,21 +738,19 @@ public void screen5(){
   
   shield = null;
   
-// rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
-  
   player.setGL(height);
   
   player.display();
   player.fall();
   
-  if (player.getf(0) < 0){
-    player.setX(width);
-    screen--;
-  }
-    if (player.getf(0) + player.getf(4) >= width){
+  
+  if (player.getf(0) > width){
     player.setX(0);
     screen++;
-    }
+  }
+  else if (player.getf(0) < 0){
+    player.setX(width);
+    screen--;
     
     // sets position of enemy on previous screen
     e1 = new Human(-100,height,20,#FF0000);
@@ -717,9 +758,10 @@ public void screen5(){
     e1dir = true;
     e1touch = true;
   }
-
+}
 public void screen6(){
   background(desert);
+  image(cave,500,450);
   displayUI(0);
   npc2.display();
     if (player.isTouching(npc2)){
@@ -731,7 +773,7 @@ public void screen6(){
     }
    if(player.getf(0) > 400) {
      noFill();
-     stroke(#FF0900);
+     stroke(#000000);
      ellipse(cx, cy, 40 , 40);
      cx = cx + vx;
      cy = cy + vy;
@@ -745,7 +787,7 @@ public void screen6(){
    }
    if(h == 1);
    noFill();
-   stroke(#FF0900);
+   stroke(#000000);
      ellipse(100, 780, 40 , 40);
   if (player.getf(0) < 0){
     player.setX(width);
@@ -760,59 +802,91 @@ public void screen6(){
 }
     
 public void screen7(){
-  background(cloudy);
-  displayUI(0);
-  if (player.getf(0) < 0){
-    player.setX(width);
-    screen--;
-  }
-    if (player.getf(0) >= width){
-    player.setX(0);
-    screen++;
-    }
-  player.display();
-  player.fall();
-}
-public void screen8(){
-  background(winter);
-  displayUI(0);
-  if (player.getf(0) < 0){
-    player.setX(width);
-    screen--;
-  }
-    if (player.getf(0) >= width){
-    player.setX(0);
-    screen++;
-    }
-  player.display();
-  player.fall();
-}
-public void screen9(){
-  background(lava1);
-  displayUI(0);
-  if (player.getf(0) < 0){
-    player.setX(width);
-    screen--;
-  }
-    if (player.getf(0) >= width){
-    player.setX(0);
-    screen++;
-    }
-  player.display();
-  player.fall();
-}
-public void screen10(){
   background(lava);
-  displayUI(0);
-  rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
+  displayUI(255);
   if (player.getf(0) < 0){
     player.setX(width);
     screen--;
   }
-    if (player.getf(0) >= width){
+  else if (player.getf(0) > width){
     player.setX(0);
     screen++;
-    }
+  }
   player.display();
   player.fall();
+  
+}
+
+public void screen8(){
+  
+  background(lava);
+  displayUI(255);
+  fill(0);
+  stroke(0);
+  player.setGL(height/3);
+  rect(0,height/3, 300, 700);
+  rect(500,height/3, 300, 700);
+ if (player.getf(0) >=300 && player.getf(0)<500){
+ player.setGL(1000);
+ }
+  if (player.getf(0) >= 300 && player.getf(1) >= 750){
+    player.setX(400);
+    player.setY(-100);
+    screen++;
+    player.setGL(height);
+  }
+  player.display();
+  player.fall();
+}
+
+public void screen9(){
+  
+  background(lair);
+  displayUI(0);
+  npc3.display();
+  player.display();
+  player.fall();
+   if (player.isTouching(npc3)){
+    fill(255);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/24);
+    text("Please....Save...Him.", npc3.getf(0), npc3.getf(1) - 4*npc3.getf(4));
+    }
+  
+  if (player.getf(0) < 0){
+    player.setX(width);
+    screen--;
+  }
+  else if (player.getf(0) > width){
+    nextTrack(0,1);
+    player.setX(0);
+    screen++;
+  }
+}
+
+public void screen10(){
+  
+  background(0);
+  displayUI(255);
+  rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
+  
+  if (player.getf(0) < 0){
+    nextTrack(1,0);
+    player.setX(width);
+    screen--;
+  }
+  player.display();
+  player.fall();
+}
+
+public void nextTrack(int b, int a){
+  music[b].pause();
+  music[b].rewind();
+  music[a].play();
+}
+
+void stop(){
+  for (AudioPlayer p : music) p.close();
+  minim.stop();
+  super.stop();
 }
