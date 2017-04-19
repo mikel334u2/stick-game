@@ -40,7 +40,7 @@ void setup(){
   idx = 0;
   music = new AudioPlayer[9];
   minim = new Minim(this);
-  music[0] = minim.loadFile("Big Blue.mp3");
+  music[0] = minim.loadFile("click.mp3");
   music[1] = minim.loadFile("dungeon.mp3");
   music[2] = minim.loadFile("Alarm.mp3");
   music[3] = minim.loadFile("Chirp.mp3");
@@ -48,7 +48,6 @@ void setup(){
   music[5] = minim.loadFile("Desert.mp3");
   music[6] = minim.loadFile("Cave.mp3");
   music[7] = minim.loadFile("lava.mp3");
- // music[8] = minim.loadFile()
   music[8] = minim.loadFile("Boss.mp3");
     
   // load images from file, resize to fit
@@ -272,8 +271,11 @@ void mousePressed(){
     if (pause || dead){
       
       // if top button clicked, unpause the game (for pause screen)
-      if (b1.isPressed()) pause = false;
-      
+      if (b1.isPressed()) {
+        pause = false;
+          music[0].rewind();
+        music[0].play();
+      }
       // if bottom one clicked, exit game
       else if (b2.isPressed()) exit();
     }
@@ -283,8 +285,11 @@ void mousePressed(){
    
       
       // if start button pressed, go to difficulty screen
-      if (b1.isPressed()) screen++;
-      
+      if (b1.isPressed()) {
+        music[0].play();
+        screen++;
+        
+      }
       // exit game if quit pressed
       else if (b2.isPressed()) exit();
     }
@@ -294,6 +299,8 @@ void mousePressed(){
       
       // if normal button pressed, go to main game in normal mode
       if (b1.isPressed()){
+        music[0].rewind();
+        music[0].play();
         normal = true;
         timeFrame = frameCount%60;
         timer = 0;
@@ -302,6 +309,8 @@ void mousePressed(){
       
       // ifhard button pressed, go to main game in hard mode
       else if (b2.isPressed()){
+        music[0].rewind();
+        music[0].play();
         hard = true;
         player.setHealth(2);
         timeFrame = frameCount%60;
