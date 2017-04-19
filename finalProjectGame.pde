@@ -7,15 +7,15 @@
 // declare variables
 import processing.sound.*;
 import ddf.minim.*;
-int idx;
+int idx, cx, cy, vx, vy, h;
 Minim minim;
 AudioPlayer [] music;
-Human player, npc1, e1, e2;
+Human player, npc1,npc2, e1, e2;
 Shield shield;
 Bullet[] bt1, bt2;
 Button b1, b2;
 PFont comicSansMS;
-PImage dungeon, sky, desert, wild, cloudy, winter, lava, lava1;
+PImage dungeon, sky, desert, cloudy, winter, lava, lava1, summer;
 
 // changing game mechanics
 int screen, score, timer, timeFrame, frameReset, timeReset, deathFrame;
@@ -30,6 +30,12 @@ void settings(){
 }
 
 void setup(){
+ // head tumbleweed variables
+  vx = -4;
+  vy = 0;
+  cx = 780;
+  cy = 780;
+  h = 0;
   //load audio
   idx = 0;
   music = new AudioPlayer[2];
@@ -45,8 +51,6 @@ void setup(){
   dungeon.resize(width, height);
   desert = loadImage("desert.png");
   desert.resize(width,height);
-  wild = loadImage("wild.jpg");
-  wild.resize(width,height);
   cloudy = loadImage("cloudy.jpg");
   cloudy.resize(width,height);
   winter = loadImage("winter.jpg");
@@ -55,7 +59,8 @@ void setup(){
   lava1.resize(width,height);
   lava = loadImage("lava.jpg");
   lava.resize(width,height);
-  
+  summer = loadImage("summer.jpg");
+  summer.resize(width,height);
   // load font
   comicSansMS = loadFont("ComicSansMS-48.vlw");
   textAlign(CENTER, CENTER);
@@ -64,6 +69,8 @@ void setup(){
   player = new Human(200,400,20,200);
   npc1 = new Human(600,400,20,100);
   npc1.setY(height - npc1.getf(3));
+  npc2 = new Human(200,400,20,#03ECFF);
+  npc2.setY(height - npc2.getf(3));
   
   // initialize bullet arrays
   bt1 = new Bullet[0];
@@ -125,8 +132,9 @@ void draw(){
   else if (screen == 8) screen8();
   else if (screen == 9) screen9();
   else if(screen == 10) {
+    music[0].pause();
+    music[1].play();
     screen10();
-    music[idx = (idx +1) % music.length].play();
   }
   // allows player continuous input upon pressing a button
   turboKeyPressed();
@@ -623,8 +631,8 @@ public void screen4(){
 }
 public void screen5(){
   
-  // makes the background the desert
-   background(desert);
+  // makes the background summer
+   background(summer);
   displayUI(0);
   
   // if player is touching enemy 2, he dies (set equal to null), increment score
@@ -711,8 +719,34 @@ public void screen5(){
   }
 
 public void screen6(){
-  background(wild);
+  background(desert);
   displayUI(0);
+  npc2.display();
+    if (player.isTouching(npc2)){
+    fill(255);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/24);
+    if (normal) text("Hey.. \n press down\n to use your shield....", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+    if (hard) text("Stop! \n Don't go any further!", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+    }
+   if(player.getf(0) > 400) {
+     noFill();
+     stroke(#FF0900);
+     ellipse(cx, cy, 40 , 40);
+     cx = cx + vx;
+     cy = cy + vy;
+     if( cx == 100){
+     h = 1;
+     vx = 0;
+     }
+    
+    if (normal) text("Don't want to \n end up like this \n poor guy..or that one", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+    if (hard) text("You're gonna end up \n just like that guy", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+   }
+   if(h == 1);
+   noFill();
+   stroke(#FF0900);
+     ellipse(100, 780, 40 , 40);
   if (player.getf(0) < 0){
     player.setX(width);
     screen--;
@@ -723,9 +757,8 @@ public void screen6(){
     }
       player.display();
       player.fall();
-  
 }
-
+    
 public void screen7(){
   background(cloudy);
   displayUI(0);
