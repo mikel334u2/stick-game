@@ -83,6 +83,7 @@ public class Human{
     else if (var == 7) return ex;
     else if (var == 8) return sy;
     else if (var == 9) return wx;
+    else if (var == 10) return angle;
     return 0;
   }
   
@@ -96,6 +97,10 @@ public class Human{
   public boolean getbool(int var){
     if (var == 0) return ground;
     return false;
+  }
+  
+  public color getColor(){
+    return c;
   }
   
   // setters
@@ -216,6 +221,22 @@ public class Human{
     float EX = h.getf(7);
     float SY = h.getf(8);
     float WX = h.getf(9);
+    
+    // essentially determines if a corner of one human's "box" is within the box
+    // of the other human
+    boolean touch1 = (ex <= EX && ex >= WX || wx <= EX && wx >= WX) &&
+      (ny >= NY && ny <= SY || sy >= NY && sy <= SY);
+    boolean touch2 = (EX <= ex && EX >= wx || WX <= ex && WX >= wx) &&
+      (NY >= ny && NY <= sy || SY >= ny && SY <= sy);
+    return touch1 || touch2;
+  }
+  
+  public boolean isTouchingWeak(Human h){
+    
+    float NY = h.getf(6)+h.getf(4)*3;
+    float EX = h.getf(7)-h.getf(4)/2;
+    float SY = h.getf(8)-h.getf(4)*3*cos(h.getf(10));
+    float WX = h.getf(9)+h.getf(4)/2;
     
     // essentially determines if a corner of one human's "box" is within the box
     // of the other human

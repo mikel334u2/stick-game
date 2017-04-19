@@ -8,23 +8,24 @@
 import ddf.minim.*;
 
 // declare variables
-Human player, npc1, npc2, e1, e2;
+Human player, npc1, npc2, npc3, e1, e2, e3, e4, boss;
 Shield shield;
 Bullet[] bt1, bt2;
 Button b1, b2;
 PFont comicSansMS;
-PImage dungeon, sky, cave, desert, summer, lava;
+PImage dungeon, sky, cave, desert, summer, lava, lair;
 
 // sound variables
 Minim minim;
 AudioPlayer [] music;
 
 // changing game mechanics
-int screen, score, timer, timeFrame, frameReset, timeReset, deathFrame;
-boolean pause, normal, hard, leftWall, rightWall, dead, cutscene;
+int screen, score, timer, timeFrame, frameReset, timeReset, deathFrame, bossHealth;
+boolean pause, normal, hard, leftWall, rightWall, dead, cutscene, threshold, already;
+float cx, v, colorChange;
 
 // character variables
-boolean e1walk, e1dir, e1touch; // enemy 1
+boolean e1walk, e1dir, touch, bossDead; // enemy/boss
 
 // set size
 void settings(){
@@ -33,11 +34,23 @@ void settings(){
 
 void setup(){
   
+   // head tumbleweed variables
+  v = -4;
+  cx = 700;
+  
   //load audio
-  music = new AudioPlayer[2];
+  music = new AudioPlayer[9];
   minim = new Minim(this);
-  music[1] = minim.loadFile("Boss.mp3");
-  music[0] = minim.loadFile("Big Blue.mp3");
+  music[0] = minim.loadFile("click.mp3");
+  music[1] = minim.loadFile("dungeon.mp3");
+  music[2] = minim.loadFile("Alarm.mp3");
+  music[3] = minim.loadFile("Chirp.mp3");
+  music[4] = minim.loadFile("Waves.mp3");
+  music[5] = minim.loadFile("Desert.mp3");
+  music[6] = minim.loadFile("Cave.mp3");
+  music[7] = minim.loadFile("lava.mp3");
+ // music[8] = minim.loadFile()
+  music[8] = minim.loadFile("Boss.mp3");
   
   // load images from file, resize to fit
   sky = loadImage("sky.png");
@@ -51,6 +64,8 @@ void setup(){
   summer.resize(width,height);
   lava = loadImage("lava.jpg");
   lava.resize(width,height);
+  lair = loadImage("lair.jpg");
+  lair.resize(width,height);
   
   // load font
   comicSansMS = loadFont("ComicSansMS-48.vlw");
@@ -60,6 +75,10 @@ void setup(){
   player = new Human(200,400,20,200);
   npc1 = new Human(600,400,20,100);
   npc1.setY(height - npc1.getf(3));
+  npc2 = new Human(200,400,20,#0000FF);
+  npc2.setY(height - npc2.getf(3));
+  npc3 = new Human(500,400,20, #A57721);
+  npc3.setY(height - npc3.getf(3));
   
   // initialize bullet arrays
   bt1 = new Bullet[0];
@@ -89,6 +108,12 @@ void setup(){
   // if true, game over
   dead = false;
   
+  // if true, you win
+  bossDead = false;
+  
+  // changes color for celebration
+  colorChange = 0;
+  
   // if true, pause game and its mechanics
   pause = false;
   
@@ -98,6 +123,9 @@ void setup(){
   
   // prohibits user control if true
   cutscene = false;
+  
+  // screen 6 boolean
+  already = false;
 }
 
 void draw(){
@@ -112,7 +140,10 @@ void draw(){
   else if (dead) gameOver();
   else if (screen == -1) startMenu();
   else if (screen == 0) difficulty();
-  else if (screen == 1) screen1();
+  else if (screen == 1){
+    music[1].play();
+    screen1();
+  }
   else if (screen == 2) screen2();
   else if (screen == 3) screen3();
   else if (screen == 4) screen4();
@@ -218,7 +249,11 @@ void mousePressed(){
     if (pause || dead){
       
       // if top button clicked, unpause the game (for pause screen)
-      if (b1.isPressed()) pause = false;
+      if (b1.isPressed()){
+        pause = false;
+        music[0].rewind();
+        music[0].play();
+      }
       
       // if bottom one clicked, exit game
       else if (b2.isPressed()) exit();
@@ -228,7 +263,11 @@ void mousePressed(){
     else if (screen == -1){
       
       // if start button pressed, go to difficulty screen
-      if (b1.isPressed()) screen++;
+      if (b1.isPressed()){
+        music[0].rewind();
+        music[0].play();
+        screen++;
+      }
       
       // exit game if quit pressed
       else if (b2.isPressed()) exit();
@@ -335,7 +374,14 @@ public void gameOver(){
   fill(255);
   textFont(comicSansMS,width/9);
   textAlign(CENTER,CENTER);
-  text("g a m e _ o v e r", width/2, height/5);
+  if (!bossDead) text("g a m e _ o v e r", width/2, height/5);
+  else {
+    colorMode(HSB);
+    fill(colorChange,255,255);
+    text("YOU WIN!!!", width/2, height/5);
+    colorChange++;
+    if (colorChange == 255) colorChange = 0;
+  }
   textFont(comicSansMS,width/16);
   text("score : "+score, width/2, height*2/5);
   
@@ -395,6 +441,8 @@ public void screen1(){
   
   // switches screen if player position is at right edge
   if (player.getf(0) > width){
+    
+    nextTrack(1,2);
     
     // set player position to x=0
     player.setX(0);
@@ -471,12 +519,16 @@ public void screen2(){
     player.setX(0);
     screen++;
     
+    nextTrack(2,1);
+    
     // set next ground level to specific level
     player.setGL(height*5/6);
   }
   
   // switch screens back if on left edge
   else if (player.getf(0) < 0){
+    
+    nextTrack(2,1);
     
     // reset x position to x=width
     player.setX(width);
@@ -529,15 +581,19 @@ public void screen3(){
     player.setX(0);
     screen++;
     
+    nextTrack(1,3);
+    
     // sets position of enemy on next screen
     e1 = new Human(-100,height,20,#FF0000);
     e1walk = false;
     e1dir = true;
-    e1touch = true;
+    touch = true;
   }
   else if (player.getf(0) < 0){
     player.setX(width);
     screen--;
+    
+    nextTrack(1,2);
     
     // when go back a screen, reset conditions for countdown timer
     frameReset = frameCount%120;
@@ -586,17 +642,18 @@ public void screen4(){
     shield = null;
     
     // if player touches enemy, subtract health by one
-    // e1touch makes sure player won't lose health until touched again
-    if (player.isTouching(e1) && e1touch){
+    // touch makes sure player won't lose health until touched again
+    if (player.isTouching(e1) && touch){
       player.setHealth(player.getint(0)-1);
-      e1touch = false;
+      touch = false;
     }
-    else if (!player.isTouching(e1)) e1touch = true;
+    else if (!player.isTouching(e1)) touch = true;
     
     // changes direction of e1 if it hits an edge
     if (e1.getf(0) > width) e1dir = false;
     else if (e1.getf(0) < 0) e1dir = true;
-    if (player.getf(0) >= width/2) e1walk = true;
+    if (normal && player.getf(0) >= width/2) e1walk = true;
+    if (hard && player.getf(0) >= width/4) e1walk = true;
   }
   
   player.display();
@@ -606,13 +663,19 @@ public void screen4(){
     player.setX(0);
     screen++;
     
+    nextTrack(3,4);
+    
     // sets position of enemy on next screen
     e2 = new Human(700,height,20,#000000);
     frameReset = frameCount%120;
+    
+    // erases bullets still on screen
     while (bt1.length > 0 && bt1[0] != null)
       bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
   }
   else if (player.getf(0) < 0){
+    nextTrack(3,1);
+    
     player.setX(width);
     screen--;
   }
@@ -620,7 +683,7 @@ public void screen4(){
 
 public void screen5(){
   
-  // makes the background the sky
+  // makes the background summer
   background(summer);
   displayUI(0);
   
@@ -691,6 +754,10 @@ public void screen5(){
   
   
   if (player.getf(0) > width){
+    threshold = false;
+    
+    nextTrack(4,5);
+    
     player.setX(0);
     screen++;
   }
@@ -698,11 +765,13 @@ public void screen5(){
     player.setX(width);
     screen--;
     
+    nextTrack(4,3);
+    
     // sets position of enemy on previous screen
     e1 = new Human(-100,height,20,#FF0000);
     e1walk = false;
     e1dir = true;
-    e1touch = true;
+    touch = true;
   }
 }
 
@@ -717,93 +786,300 @@ public void screen6(){
   // sets ground level to bottom of the screen
   player.setGL(height);
   
-  //// displays an npc
-  //npc1.display();
+  // displays an npc
+  npc2.display();
   
-  //// if player touches npc, display some text above his head (varies w/ difficulty)
-  //if (player.isTouching(npc1)){
-  //  fill(255);
-  //  textAlign(CENTER,CENTER);
-  //  textFont(comicSansMS,width/24);
-  //  if (normal) text("G'day, mate!", npc1.getf(0), npc1.getf(1) - 4*npc1.getf(4));
-  //  if (hard) text("...", npc1.getf(0), npc1.getf(1) - 4*npc1.getf(4));
-  //}
+  // if player touches npc, display some text above his head (varies w/ difficulty)
+  if (player.isTouching(npc2) && !(threshold || already)){
+    
+    fill(#0000FF);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/30);
+    if (normal) text("Welcome Stick Man! I have some neat advice." +
+      "\nPress DOWN to activate your shield.\nYou'll definitely need it!",
+      npc2.getf(0) + 5*npc2.getf(4), npc2.getf(1) - 5*npc2.getf(4));
+    if (hard) text("...heh, good luck..", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+  }
+  
+  if (player.getf(0) > width/2) threshold = true;
+  if (threshold && !already){
+    noFill();
+    stroke(200);
+    ellipse(cx, 780, 40, 40);
+    cx += v;
+    if (cx == 100) v = 0;
+    fill(#0000FF);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/30);
+    if (normal) text("You don't want to end up\nlike this poor guy...",
+      npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+    if (hard) text("Mmm...dessert...", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+  }
+  if (already){
+    if (player.isTouching(npc2)){
+      fill(#0000FF);
+      textAlign(CENTER,CENTER);
+      textFont(comicSansMS,width/30);
+      if (normal) text("Welcome Stick Man! I have some neat advice." +
+        "\nPress DOWN to activate your shield.\nYou'll definitely need it!",
+        npc2.getf(0) + 5*npc2.getf(4), npc2.getf(1) - 5*npc2.getf(4));
+      if (hard) text("...heh, good luck..", npc2.getf(0), npc2.getf(1) - 4*npc2.getf(4));
+    }
+    noFill();
+    stroke(200);
+    ellipse(cx, 780, 40, 40);
+  }
   
   // display player, allow to fall
   player.display();
   player.fall();
   
-  //// if player touches a left wall, npc says something (varies w/ difficulty)
-  //if (leftWall){
-  //  fill(255);
-  //  textFont(comicSansMS,width/30);
-  //  if (normal) text("Can't go there, buddy!",
-  //    npc1.getf(0), npc1.getf(1) - 4*npc1.getf(4));
-  //  if (hard) text("....?", npc1.getf(0), npc1.getf(1) - 4*npc1.getf(4));
-  //}
-  
-  // switches screen if player position is at right edge
   if (player.getf(0) < 0){
+    
+    nextTrack(5,4);
     
     // set player position to x=width
     player.setX(width);
     screen--;
+    already = true;
   }
   else if (player.getf(0) > width){
+    
+    nextTrack(5,6);
     
     // set player position to x=0
     player.setX(0);
     screen++;
+    already = true;
+    
+    // sets position of enemy on next screen
+    e3 = new Human(500,height,20,255);
+    frameReset = frameCount%120;
+    while (bt1.length > 0 && bt1[0] != null)
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    if (hard){
+      e4 = new Human(700,height,20,255);
+      while (bt2.length > 0 && bt2[0] != null)
+        bt2 = (Bullet[])subset(bt2,1,bt2.length-1);
+    }
   }
 }
 
 public void screen7(){
-  background(0);
+  
+  // dungeon background
+  background(lava);
   displayUI(255);
-  if (player.getf(0) < 0){
+  
+  // creates left and right walls at specific locations
+  rightWall = (player.getf(0) + player.getf(4) >= width/4 && player.getf(2) > height*5/6
+    || player.getf(0) + player.getf(4) >= width/2 && player.getf(2) > height*2/3 ||
+    player.getf(0) + player.getf(4) >= width*3/4 && player.getf(2) > height/3)
+    ? true : false;
+    
+  // draws platforms
+  fill(#FF0000);
+  stroke(0);
+  rectMode(CORNER);
+  rect(width/4, height*5/6, width*3/4, height/6);
+  rect(width/2, height*2/3, width/2, height/6);
+  rect(width*3/4, height/3, width/4, height/3);
+  
+  // if the player is within these x positions, set the ground level to specified level
+  if (player.getf(0) + player.getf(4) <= width/4) player.setGL(height);
+  else if (player.getf(0) + player.getf(4) > width*3/4 && !rightWall)
+    player.setGL(height/3);
+  else if (player.getf(0) + player.getf(4) > width/2 && !rightWall)
+    player.setGL(height*2/3);
+  else if (player.getf(0) + player.getf(4) > width/4 && !rightWall)
+    player.setGL(height*5/6);
+    
+  // if player is touching enemy 3, he dies (set equal to null), increment score
+  if (e3 != null && player.isTouching(e3)){
+    e3 = null;
+    score++;
+  }
+  
+  // if the enemy exists...
+  else if (e3 != null){
+    
+    // display/fall enemy
+    e3.setGL(height*2/3);
+    e3.display();
+    e3.fall();
+    
+    if ((frameCount - frameReset) % 120 == 0){
+      
+      // put bullet at first index of bt1 array
+      bt1 = (Bullet[])append(bt1, e3.bullet(-10,0));
+    }
+  }
+  
+  if (hard && e4 != null && player.isTouching(e4)){
+    e4 = null;
+    score++;
+  }
+  
+  // if the enemy exists...
+  else if (hard && e4 != null){
+    
+    // display/fall enemy
+    e4.setGL(height/3);
+    e4.display();
+    e4.fall();
+    
+    if ((frameCount - frameReset) % 120 == 0){
+      
+      // put bullet at first index of bt1 array
+      bt2 = (Bullet[])append(bt2, e4.bullet(-10,0));
+    }
+  }
+  
+  for (Bullet bullet : bt1){
+    
+    // if the bullet is touching the shield, simply delete it
+    if (!(bullet == null || shield == null) && bullet.isTouching(shield)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // if it touches the player, subtract health from player and delete bullet
+    else if (bullet != null && bullet.isTouching(player)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+      player.setHealth(player.getint(0)-1);
+    }
+    
+    // if bullet is past left bound, delete it (saves memory)
+    else if (bullet != null && bullet.getX() < 0){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // otherwise, move and display the bullet
+    else if (bullet != null){
+      bullet.display();
+      bullet.setSpeed(player.getf(0)*.05 - bullet.getX()*.05,
+        player.getf(1)*.05 - bullet.getY()*.05);
+      bullet.move();
+    }
+  }
+  
+  if (hard){
+    for (Bullet bullet : bt2){
+      
+      // if the bullet is touching the shield, simply delete it
+      if (!(bullet == null || shield == null) && bullet.isTouching(shield)){
+        bt2 = (Bullet[])subset(bt2,1,bt2.length-1);
+      }
+      
+      // if it touches the player, subtract health from player and delete bullet
+      else if (bullet != null && bullet.isTouching(player)){
+        bt2 = (Bullet[])subset(bt2,1,bt2.length-1);
+        player.setHealth(player.getint(0)-1);
+      }
+      
+      // if bullet is past left bound, delete it (saves memory)
+      else if (bullet != null && bullet.getX() < 0){
+        bt2 = (Bullet[])subset(bt2,1,bt2.length-1);
+      }
+      
+      // otherwise, move and display the bullet
+      else if (bullet != null){
+        bullet.display();
+        bullet.setSpeed(player.getf(0)*.05 - bullet.getX()*.05,
+          player.getf(1)*.05 - bullet.getY()*.05);
+        bullet.move();
+      }
+    }
+  }
+  
+  shield = null;
+  
+  player.display();
+  player.fall();
+  
+  if (player.getf(0) > width){
+    player.setX(0);
+    nextTrack(6,7);
+    screen++;
+    player.setGL(height/3);
+  }
+  else if (player.getf(0) < 0){
+    nextTrack(6,5);
     player.setX(width);
     screen--;
   }
-  else if (player.getf(0) > width){
-    player.setX(0);
-    screen++;
-  }
-  player.display();
-  player.fall();
 }
 
 public void screen8(){
   
   background(lava);
   displayUI(255);
+  
+  fill(0);
+  stroke(0);
+  player.setGL(height/3);
+  rect(0,height/3, 300, 700);
+  rect(500,height/3, 300, 700);
+  
+  rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
+  
+   if (player.getf(0) >=300 && player.getf(0)<500){
+     player.setGL(1000);
+   }
+    if (player.getf(0) >= 300 && player.getf(1) >= 750){
+      
+      music[7].pause();
+      music[7].rewind();
+      player.setX(400);
+      player.setY(-100);
+      screen++;
+      player.setGL(height);
+    }
+  
+  
   if (player.getf(0) < 0){
+    nextTrack(7,6);
     player.setX(width);
     screen--;
+    player.setGL(height/2);
   }
-  else if (player.getf(0) > width){
-    player.setX(0);
-    screen++;
-  }
+  
   player.display();
   player.fall();
 }
 
 public void screen9(){
   
-  background(255);
+  background(lair);
   displayUI(0);
+  npc3.display();
+  player.display();
+  player.fall();
+  
+  player.setGL(height);
+  
+  if (player.isTouching(npc3)){
+    fill(255);
+    textAlign(CENTER,CENTER);
+    textFont(comicSansMS,width/24);
+    text("Please....Save...Him.", npc3.getf(0), npc3.getf(1) - 4*npc3.getf(4));
+  }
+  
+  leftWall = (player.getf(0) - player.getf(4) <= 0) ? true : false;
   
   player.display();
   player.fall();
   
-  if (player.getf(0) < 0){
-    player.setX(width);
-    screen--;
-  }
-  else if (player.getf(0) > width){
-    nextTrack(0,1);
+  if (player.getf(0) > width){
+    music[8].play();
     player.setX(0);
     screen++;
+    boss = new Human(600,height,80,#D4D80F);
+    if (normal) bossHealth = 6;
+    if (hard) bossHealth = 15;
+    touch = true;
+    frameReset = frameCount%120;
+    while (bt1.length > 0 && bt1[0] != null)
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
   }
 }
 
@@ -811,13 +1087,69 @@ public void screen10(){
   
   background(0);
   displayUI(255);
-  rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
   
-  if (player.getf(0) < 0){
-    nextTrack(1,0);
-    player.setX(width);
-    screen--;
+  // if player is touching boss, he loses health, player is warped
+  if (boss != null && player.isTouchingWeak(boss) && touch){
+    if (boss.getColor() == #D4D80F) boss.setColor(#D11515);
+    else boss.setColor(#D4D80F);
+    player.setX(20);
+    bossHealth--;
+    touch = false;
   }
+  else if (!player.isTouchingWeak(boss)) touch = true;
+  
+  if (bossHealth == 0){
+    boss = null;
+    score += 100;
+    bossDead = true;
+    dead = true;
+    music[1].pause();
+  }
+  
+  // if the enemy exists...
+  else if (boss != null){
+    
+    // display/fall enemy
+    boss.display();
+    boss.fall();
+    
+    if (normal && (frameCount - frameReset) % 60 == 0){
+      
+      // put bullet at first index of bt1 array
+      bt1 = (Bullet[])append(bt1, boss.bullet(-10,0));
+    }
+  }
+  
+  for (Bullet bullet : bt1){
+    
+    // if the bullet is touching the shield, simply delete it
+    if (!(bullet == null || shield == null) && bullet.isTouching(shield)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // if it touches the player, subtract health from player and delete bullet
+    else if (bullet != null && bullet.isTouching(player)){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+      player.setHealth(player.getint(0)-1);
+    }
+    
+    // if bullet is past left bound, delete it (saves memory)
+    else if (bullet != null && bullet.getX() < 0){
+      bt1 = (Bullet[])subset(bt1,1,bt1.length-1);
+    }
+    
+    // otherwise, move and display the bullet
+    else if (bullet != null){
+      bullet.display();
+      bullet.setSpeed(player.getf(0)*.05 - bullet.getX()*.05,
+          player.getf(1)*.05 - bullet.getY()*.05);
+      bullet.move();
+    }
+  }
+  
+  // creates a left/right wall if player runs into left/right edge
+  leftWall = (player.getf(0) - player.getf(4) <= 0) ? true : false;
+  rightWall = (player.getf(0) + player.getf(4) >= width) ? true : false;
   player.display();
   player.fall();
 }

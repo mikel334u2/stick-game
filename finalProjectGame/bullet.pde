@@ -14,7 +14,7 @@ class Bullet{
   
   // display the bullet
   public void display(){
-    stroke(0);
+    stroke(#FF0000);
     strokeWeight(10);
     point(x,y);
   }
